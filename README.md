@@ -143,12 +143,37 @@ const items = Array.from(xml.querySelectorAll('item')).slice(0, 25); // Change 2
 - **HTTPS Recommended**: Use HTTPS in production to protect RSS feed URLs
 - **OAuth2 Ready**: Compatible with OAuth2 proxy protection (see nginx config above)
 
+## Updating the Deployed Version
+
+After making changes to `plex-watchlist-viewer.html`, deploy updates:
+
+```bash
+# Copy updated file to web server
+sudo cp plex-watchlist-viewer.html /var/www/plex-watchlist/index.html
+
+# Reload nginx (if config changed)
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+**For production deployment with git workflow:**
+```bash
+# 1. Make changes to plex-watchlist-viewer.html
+# 2. Test locally (python3 -m http.server 8080)
+# 3. Commit and push to GitHub
+git add plex-watchlist-viewer.html
+git commit -m "Update: description of changes"
+git push
+
+# 4. Deploy to production server
+sudo cp plex-watchlist-viewer.html /var/www/plex-watchlist/index.html
+```
+
 ## Production Deployment
 
 Current production deployment at https://watchlist.800801.online:
 - nginx reverse proxy with Google OAuth2 authentication
 - SSL/TLS encryption via Let's Encrypt wildcard certificate
-- Source file: `/home/tyler/Desktop/mediaserver/plex-watchlist/plex-watchlist-viewer.html`
+- Source file: `/home/tyler/Desktop/mediaserver/plex-watchlist-viewer/plex-watchlist-viewer.html`
 - Deployed to: `/var/www/plex-watchlist/index.html`
 - Part of the [800801.online media server stack](https://github.com/tylerbcrawford/media-server-config)
 
