@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plex Watchlist Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: sans-serif;
+            background-color: #111;
+            color: #eee;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00ff41;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #ddd;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .refresh-btn {
+            padding: 8px 20px;
+            background: #00ff41;
+            color: #111;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .refresh-btn:hover {
+            background: #00ff00;
+        }
+        
+        .refresh-btn:active {
+            transform: none;
+        }
+        
+        .lists-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 968px) {
+            .lists-container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .list-section {
+            background: #1a1a1a;
+            border-radius: 4px;
+            padding: 25px;
+            border: 1px solid #333;
+        }
+        
+        .list-section h2 {
+            color: #00ff41;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            border-bottom: 2px solid #00ff41;
+            padding-bottom: 10px;
+            text-align: center;
+        }
+        
+        .item {
+            background: #050505;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        
+        .item:hover {
+            background: #0a0a0a;
+        }
+        
+        .item-title {
+            font-size: 1.2em;
+            color: #eee;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .item-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            font-size: 0.9em;
+            color: #ddd;
+            justify-content: center;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-movie {
+            background: #00ff41;
+            color: #111;
+        }
+        
+        .badge-show {
+            background: #4af;
+            color: #111;
+        }
+        
+        .imdb-link {
+            color: #f5c518;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .imdb-link:hover {
+            text-decoration: underline;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #ddd;
+            font-size: 1.2em;
+            padding: 40px;
+        }
+        
+        .error {
+            background: #1a1a1a;
+            border: 2px solid #ff4444;
+            border-radius: 4px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #ff4444;
+        }
+        
+        .timestamp {
+            text-align: center;
+            color: #808080;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        
+        .minimal-item {
+            padding: 8px;
+            margin: 4px 0;
+            background: #050505;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.2s;
+        }
+        
+        .minimal-item:hover {
+            background: #0a0a0a;
+        }
+        
+        .minimal-item-text {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95em;
+        }
+        
+        .copy-title-btn {
+            padding: 4px 10px;
+            background: #00ff41;
+            color: #111;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+            white-space: nowrap;
+            transition: background 0.2s;
+        }
+        
+        .copy-title-btn:hover {
+            background: #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 Plex Watchlist Viewer</h1>
+        <p class="subtitle">Last 25 additions to your and your friends' watchlists</p>
+        
+        <div class="button-container">
+            <button class="refresh-btn" onclick="loadWatchlists()">🔄 Refresh</button>
+            <button class="refresh-btn" onclick="toggleView()" id="toggle-btn">✨ Fancy View</button>
+        </div>
+        
+        <div class="lists-container" id="fancy-view" style="display: none;">
+            <div class="list-section">
+                <h2>📺 Your Watchlist</h2>
+                <div id="personal-list" class="loading">Loading...</div>
+            </div>
+            
+            <div class="list-section">
+                <h2>👥 Friends' Watchlist</h2>
+                <div id="friends-list" class="loading">Loading...</div>
+            </div>
+        </div>
+        
+        <div class="lists-container" id="minimal-view">
+            <div class="list-section">
+                <h2>📺 Your Watchlist</h2>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;">
+                    <div id="personal-list-minimal"></div>
+                </div>
+                <button onclick="copyToClipboard('personal-list-minimal-text')" style="margin-top: 10px; padding: 8px 16px; background: #00ff41; color: #111; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">📋 Copy All Titles</button>
+            </div>
+            
+            <div class="list-section">
+                <h2>👥 Friends' Watchlist</h2>
+                <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;">
+                    <div id="friends-list-minimal"></div>
+                </div>
+                <button onclick="copyToClipboard('friends-list-minimal-text')" style="margin-top: 10px; padding: 8px 16px; background: #00ff41; color: #111; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">📋 Copy All Titles</button>
+            </div>
+        </div>
+        
+        <div class="timestamp" id="timestamp"></div>
+    </div>
+
+    <script>
+        let isMinimalView = true;
+        
+        function toggleView() {
+            isMinimalView = !isMinimalView;
+            const fancyView = document.getElementById('fancy-view');
+            const minimalView = document.getElementById('minimal-view');
+            const toggleBtn = document.getElementById('toggle-btn');
+            
+            if (isMinimalView) {
+                fancyView.style.display = 'none';
+                minimalView.style.display = 'grid';
+                toggleBtn.textContent = '✨ Switch to Fancy View';
+            } else {
+                fancyView.style.display = 'grid';
+                minimalView.style.display = 'none';
+                toggleBtn.textContent = '📋 Switch to Minimal View';
+            }
+        }
+        
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                // Show copied feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                btn.style.background = '#4af';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#00ff41';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+        
+        function copyTitle(title, btnElement) {
+            navigator.clipboard.writeText(title).then(() => {
+                const originalText = btnElement.textContent;
+                btnElement.textContent = '✓';
+                btnElement.style.background = '#4af';
+                setTimeout(() => {
+                    btnElement.textContent = originalText;
+                    btnElement.style.background = '#00ff41';
+                }, 1500);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+        const PERSONAL_RSS = 'https://rss.plex.tv/cb8fae3a-4ff2-4a4f-91bf-46ce7a38a134';
+        const FRIENDS_RSS = 'https://rss.plex.tv/69994fa0-ea5e-4636-92b9-50662cb24aeb';
+
+        async function fetchAndParseFeed(url) {
+            try {
+                const response = await fetch(url);
+                const text = await response.text();
+                const parser = new DOMParser();
+                const xml = parser.parseFromString(text, 'text/xml');
+                
+                const items = Array.from(xml.querySelectorAll('item')).slice(0, 25);
+                
+                return items.map(item => {
+                    const title = item.querySelector('title')?.textContent || 'Unknown';
+                    const guid = item.querySelector('guid')?.textContent || '';
+                    const category = item.querySelector('category')?.textContent || 'unknown';
+                    const pubDate = item.querySelector('pubDate')?.textContent || '';
+                    const link = item.querySelector('link')?.textContent || '';
+                    
+                    // Extract IMDb ID from guid (e.g., "imdb://tt0266697")
+                    const imdbMatch = guid.match(/imdb:\/\/(tt\d+)/);
+                    const imdbId = imdbMatch ? imdbMatch[1] : null;
+                    
+                    // Extract year from title (e.g., "Kill Bill: Vol. 1 (2003)")
+                    const yearMatch = title.match(/\((\d{4})\)/);
+                    const year = yearMatch ? yearMatch[1] : '';
+                    const cleanTitle = title.replace(/\s*\(\d{4}\)\s*$/, '');
+                    
+                    return {
+                        title: cleanTitle,
+                        year,
+                        category,
+                        imdbId,
+                        pubDate: new Date(pubDate),
+                        link
+                    };
+                });
+            } catch (error) {
+                console.error('Error fetching feed:', error);
+                throw error;
+            }
+        }
+
+        function renderItems(items, containerId) {
+            const container = document.getElementById(containerId);
+            
+            if (items.length === 0) {
+                container.innerHTML = '<div class="loading">No items found</div>';
+                return;
+            }
+            
+            const html = items.map(item => {
+                const searchQuery = encodeURIComponent(item.title);
+                let identifierHtml = '';
+                
+                if (item.imdbId) {
+                    // Show IMDb ID for both movies and TV shows when available
+                    identifierHtml = `
+                        <span class="meta-item">
+                            <a href="https://www.imdb.com/title/${item.imdbId}/" target="_blank" class="imdb-link">
+                                IMDb: ${item.imdbId}
+                            </a>
+                        </span>
+                    `;
+                } else if (item.category === 'show') {
+                    // For TV shows without IMDb, provide TheTVDB search link
+                    identifierHtml = `
+                        <span class="meta-item">
+                            <a href="https://thetvdb.com/search?query=${searchQuery}" target="_blank" class="imdb-link" style="color: #4af;">
+                                🔍 Find TheTVDB ID
+                            </a>
+                        </span>
+                    `;
+                } else {
+                    // For movies without IMDb, provide IMDb search link
+                    const imdbSearchQuery = encodeURIComponent(`${item.title}${item.year ? ' ' + item.year : ''}`);
+                    identifierHtml = `
+                        <span class="meta-item">
+                            <a href="https://www.imdb.com/find?q=${imdbSearchQuery}" target="_blank" class="imdb-link">
+                                🔍 Find IMDb ID
+                            </a>
+                        </span>
+                    `;
+                }
+                
+                return `
+                <div class="item">
+                    <div class="item-title">${item.title}</div>
+                    <div class="item-meta">
+                        <span class="meta-item">
+                            <span class="badge ${item.category === 'movie' ? 'badge-movie' : 'badge-show'}">
+                                ${item.category === 'movie' ? '🎬 Movie' : '📺 TV Show'}
+                            </span>
+                        </span>
+                        ${item.year ? `<span class="meta-item">📅 ${item.year}</span>` : ''}
+                        ${identifierHtml}
+                        <span class="meta-item">🕒 ${item.pubDate.toLocaleDateString()}</span>
+                    </div>
+                </div>
+            `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        function renderMinimalItems(items, containerId) {
+            const container = document.getElementById(containerId);
+            
+            if (items.length === 0) {
+                container.innerHTML = '<div style="color: #808080;">No items found</div>';
+                return;
+            }
+            
+            // Create hidden text version for "copy all" button
+            const textId = containerId + '-text';
+            let html = `<div id="${textId}" style="display: none;">${items.map(item => item.title).join('\n')}</div>`;
+            
+            // Create visual list with individual copy buttons
+            html += items.map((item, index) => {
+                const type = item.category === 'movie' ? '[MOVIE]' : '[TV]';
+                const year = item.year ? ` (${item.year})` : '';
+                const displayText = `${index + 1}. ${item.title}${year} ${type}`;
+                const escapedTitle = item.title.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                
+                return `
+                    <div class="minimal-item">
+                        <span class="minimal-item-text">${displayText}</span>
+                        <button class="copy-title-btn" onclick="copyTitle('${escapedTitle}', this)">
+                            📋 Copy
+                        </button>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function showError(containerId, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="error">⚠️ ${message}</div>`;
+        }
+
+        async function loadWatchlists() {
+            document.getElementById('personal-list').innerHTML = '<div class="loading">Loading...</div>';
+            document.getElementById('friends-list').innerHTML = '<div class="loading">Loading...</div>';
+            
+            try {
+                const [personalItems, friendsItems] = await Promise.all([
+                    fetchAndParseFeed(PERSONAL_RSS),
+                    fetchAndParseFeed(FRIENDS_RSS)
+                ]);
+                
+                renderItems(personalItems, 'personal-list');
+                renderItems(friendsItems, 'friends-list');
+                renderMinimalItems(personalItems, 'personal-list-minimal');
+                renderMinimalItems(friendsItems, 'friends-list-minimal');
+                
+                document.getElementById('timestamp').textContent = 
+                    `Last updated: ${new Date().toLocaleString()}`;
+            } catch (error) {
+                showError('personal-list', 'Failed to load personal watchlist');
+                showError('friends-list', 'Failed to load friends watchlist');
+                console.error('Error loading watchlists:', error);
+            }
+        }
+
+        // Load on page load
+        loadWatchlists();
+        
+        // Auto-refresh every 5 minutes
+        setInterval(loadWatchlists, 5 * 60 * 1000);
+    </script>
+</body>
+</html>
