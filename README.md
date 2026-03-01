@@ -173,7 +173,7 @@ sudo cp plex-watchlist-viewer.html /var/www/plex-watchlist/index.html
 Current production deployment at https://watchlist.800801.online:
 - nginx reverse proxy with Google OAuth2 authentication
 - SSL/TLS encryption via Let's Encrypt wildcard certificate
-- Source file: `/home/tyler/Desktop/mediaserver/plex-watchlist-viewer/plex-watchlist-viewer.html`
+- Source file: `/home/tyler/Desktop/media-server/plex-watchlist-viewer/plex-watchlist-viewer.html`
 - Deployed to: `/var/www/plex-watchlist/index.html`
 - Part of the [800801.online media server stack](https://github.com/tylerbcrawford/media-server-config)
 
